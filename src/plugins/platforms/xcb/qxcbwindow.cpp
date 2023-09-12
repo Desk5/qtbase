@@ -474,6 +474,7 @@ QXcbWindow::~QXcbWindow()
 
 QXcbForeignWindow::~QXcbForeignWindow()
 {
+    connection()->removeWindowEventListener(m_window);
     // Clear window so that destroy() does not affect it
     m_window = 0;
 

@@ -228,6 +228,8 @@ QPlatformNativeInterface::NativeResourceForIntegrationFunction QXcbNativeInterfa
         return NativeResourceForIntegrationFunction(reinterpret_cast<void *>(removePeekerId));
     if (lowerCaseResource == "peekeventqueue")
         return NativeResourceForIntegrationFunction(reinterpret_cast<void *>(peekEventQueue));
+    if (lowerCaseResource == "observeforeignwindow")
+        return NativeResourceForIntegrationFunction(reinterpret_cast<void *>(observeForeignWindow));
 
     return nullptr;
 }
@@ -405,6 +407,13 @@ void QXcbNativeInterface::setStartupId(const char *data)
     QXcbConnection *connection = integration->connection();
     if (connection)
         connection->setStartupId(startupId);
+}
+
+bool QXcbNativeInterface::observeForeignWindow(QWindow *window)
+{
+    auto qxcbwin = static_cast<QXcbWindow *>(window->handle());
+    qxcbwin->connection()->addWindowEventListener(qxcbwin->xcb_window(), qxcbwin);
+    return true;
 }
 
 QXcbScreen *QXcbNativeInterface::qPlatformScreenForWindow(QWindow *window)

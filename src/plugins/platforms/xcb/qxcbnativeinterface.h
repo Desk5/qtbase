@@ -90,6 +90,7 @@ public:
     static bool peekEventQueue(QXcbEventQueue::PeekerCallback peeker, void *peekerData = nullptr,
                                QXcbEventQueue::PeekOptions option = QXcbEventQueue::PeekDefault,
                                qint32 peekerId = -1);
+    static bool observeForeignWindow(QWindow *window);
 
     Q_INVOKABLE QString dumpConnectionNativeWindows(const QXcbConnection *connection, WId root) const;
     Q_INVOKABLE QString dumpNativeWindows(WId root = 0) const;
