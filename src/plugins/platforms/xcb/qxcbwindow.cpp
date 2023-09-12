@@ -533,6 +533,7 @@ QXcbForeignWindow::~QXcbForeignWindow()
     if (QPlatformWindow::parent())
         setParent(nullptr);
 
+    connection()->removeWindowEventListener(m_window);
     // Clear window so that destroy() does not affect it
     m_window = 0;
 
