@@ -37,6 +37,9 @@ public:
 #ifndef QT_NO_CURSOR
     void *nativeResourceForCursor(const QByteArray &resource, const QCursor &cursor) override;
 #endif
+    NativeResourceForIntegrationFunction nativeResourceFunctionForIntegration(const QByteArray& resource) override;
+    static bool observeForeignWindow(QWindow* window);
+    static bool handleFocusEvent(bool focusIn, QWindow* window);
 };
 
 QT_END_NAMESPACE

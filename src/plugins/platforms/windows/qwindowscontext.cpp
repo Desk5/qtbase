@@ -155,6 +155,7 @@ struct QWindowsContextPrivate {
     unsigned m_systemInfo = 0;
     QSet<QString> m_registeredWindowClassNames;
     QWindowsContext::HandleBaseWindowHash m_windows;
+    QHash<HWND, QWindowsBaseWindow*> m_foreignWindows;
     HDC m_displayContext = nullptr;
     int m_defaultDPI = 96;
     QWindowsKeyMapper m_keyMapper;
@@ -632,6 +633,11 @@ void QWindowsContext::addWindow(HWND hwnd, QWindowsWindow *w)
     d->m_windows.insert(hwnd, w);
 }
 
+void QWindowsContext::addForeignWindow(HWND hwnd, QWindowsBaseWindow *w)
+{
+    d->m_foreignWindows.insert(hwnd, w);
+}
+
 void QWindowsContext::removeWindow(HWND hwnd)
 {
     const HandleBaseWindowHash::iterator it = d->m_windows.find(hwnd);
@@ -639,6 +645,11 @@ void QWindowsContext::removeWindow(HWND hwnd)
         if (d->m_keyMapper.keyGrabber() == it.value()->window())
             d->m_keyMapper.setKeyGrabber(nullptr);
         d->m_windows.erase(it);
+    }
+
+    auto it2 = d->m_foreignWindows.find(hwnd);
+    if (it2 != d->m_foreignWindows.end()) {
+        d->m_foreignWindows.erase(it2);
     }
 }
 
@@ -656,9 +667,11 @@ QWindowsWindow *QWindowsContext::findPlatformWindow(HWND hwnd) const
     return d->m_windows.value(hwnd);
 }
 
-QWindowsWindow *QWindowsContext::findClosestPlatformWindow(HWND hwnd) const
+QWindowsBaseWindow *QWindowsContext::findClosestPlatformWindow(HWND hwnd) const
 {
-    QWindowsWindow *window = d->m_windows.value(hwnd);
+    QWindowsBaseWindow *window = d->m_windows.value(hwnd);
+    if (!window)
+        window = d->m_foreignWindows.value(hwnd);
 
     // Requested hwnd may also be a child of a platform window in case of embedded native windows.
     // Find the closest parent that has a platform window.
@@ -1317,7 +1330,7 @@ bool QWindowsContext::windowsProc(HWND hwnd, UINT message,
  * focus-in event.
  * This helps applications that do handling in focus-out events. */
 void QWindowsContext::handleFocusEvent(QtWindows::WindowsEventType et,
-                                       QWindowsWindow *platformWindow)
+                                       QWindowsBaseWindow *platformWindow)
 {
     QWindow *nextActiveWindow = nullptr;
     if (et == QtWindows::FocusInEvent) {
@@ -1329,7 +1342,7 @@ void QWindowsContext::handleFocusEvent(QtWindows::WindowsEventType et,
         }
         // QTBUG-32867: Invoking WinAPI SetParent() can cause focus-in for the
         // window which is not desired for native child widgets.
-        if (platformWindow->testFlag(QWindowsWindow::WithinSetParent)) {
+        if (!platformWindow->isForeignWindow() && static_cast<QWindowsWindow*>(platformWindow)->testFlag(QWindowsWindow::WithinSetParent)) {
             QWindow *currentFocusWindow = QGuiApplication::focusWindow();
             if (currentFocusWindow && currentFocusWindow != platformWindow->window()) {
                 currentFocusWindow->requestActivate();
@@ -1341,7 +1354,7 @@ void QWindowsContext::handleFocusEvent(QtWindows::WindowsEventType et,
         // Focus out: Is the next window known and different
         // from the receiving the focus out.
         if (const HWND nextActiveHwnd = GetFocus())
-            if (QWindowsWindow *nextActivePlatformWindow = findClosestPlatformWindow(nextActiveHwnd))
+            if (QWindowsBaseWindow *nextActivePlatformWindow = findClosestPlatformWindow(nextActiveHwnd))
                 if (nextActivePlatformWindow != platformWindow)
                     nextActiveWindow = nextActivePlatformWindow->window();
     }

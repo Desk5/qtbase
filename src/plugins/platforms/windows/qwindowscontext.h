@@ -37,6 +37,7 @@ class QWindowsMenuBar;
 class QWindowsScreenManager;
 class QWindowsTabletSupport;
 class QWindowsWindow;
+class QWindowsBaseWindow;
 class QWindowsMimeRegistry;
 struct QWindowCreationContext;
 struct QWindowsContextPrivate;
@@ -89,9 +90,10 @@ public:
     static QWindowsContext *instance();
 
     void addWindow(HWND, QWindowsWindow *w);
+    void addForeignWindow(HWND, QWindowsBaseWindow* w);
     void removeWindow(HWND);
 
-    QWindowsWindow *findClosestPlatformWindow(HWND) const;
+    QWindowsBaseWindow *findClosestPlatformWindow(HWND) const;
     QWindowsWindow *findPlatformWindow(HWND) const;
     QWindowsWindow *findPlatformWindow(const QWindowsMenuBar *mb) const;
     QWindow *findWindow(HWND) const;
@@ -158,8 +160,8 @@ public:
     static bool filterNativeEvent(MSG *msg, LRESULT *result);
     static bool filterNativeEvent(QWindow *window, MSG *msg, LRESULT *result);
 
+    void handleFocusEvent(QtWindows::WindowsEventType et, QWindowsBaseWindow* w);
 private:
-    void handleFocusEvent(QtWindows::WindowsEventType et, QWindowsWindow *w);
 #ifndef QT_NO_CONTEXTMENU
     bool handleContextMenuEvent(QWindow *window, const MSG &msg);
 #endif

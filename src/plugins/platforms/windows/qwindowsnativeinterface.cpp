@@ -132,4 +132,28 @@ void *QWindowsNativeInterface::nativeResourceForContext(const QByteArray &resour
 }
 #endif // !QT_NO_OPENGL
 
+QPlatformNativeInterface::NativeResourceForIntegrationFunction QWindowsNativeInterface::nativeResourceFunctionForIntegration(const QByteArray& resource)
+{
+    if (resource == QByteArrayLiteral("observeforeignwindow"))
+        return NativeResourceForIntegrationFunction(reinterpret_cast<void *>(observeForeignWindow));
+
+    if (resource == QByteArrayLiteral("handlefocusevent"))
+        return NativeResourceForIntegrationFunction(reinterpret_cast<void *>(handleFocusEvent));
+
+    return nullptr;
+}
+
+bool QWindowsNativeInterface::observeForeignWindow(QWindow* window)
+{
+    auto* qwbw = static_cast<QWindowsBaseWindow*>(window->handle());
+    QWindowsContext::instance()->addForeignWindow(qwbw->handle(), qwbw);
+    return true;
+}
+
+bool QWindowsNativeInterface::handleFocusEvent(bool focusIn, QWindow* window)
+{
+    auto* qwbw = static_cast<QWindowsBaseWindow*>(window->handle());
+    QWindowsContext::instance()->handleFocusEvent(focusIn ? QtWindows::FocusInEvent : QtWindows::FocusOutEvent, qwbw);
+    return true;
+}
 QT_END_NAMESPACE

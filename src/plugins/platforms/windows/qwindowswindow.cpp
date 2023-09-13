@@ -1347,6 +1347,11 @@ QWindowsForeignWindow::QWindowsForeignWindow(QWindow *window, HWND hwnd)
 {
 }
 
+QWindowsForeignWindow::~QWindowsForeignWindow()
+{
+    QWindowsContext::instance()->removeWindow(m_hwnd);
+}
+
 void QWindowsForeignWindow::setParent(const QPlatformWindow *newParentWindow)
 {
     const bool wasTopLevel = isTopLevel_sys();
