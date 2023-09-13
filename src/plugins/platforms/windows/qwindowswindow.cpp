@@ -1368,6 +1368,7 @@ QWindowsForeignWindow::~QWindowsForeignWindow()
 {
     if (QPlatformWindow::parent())
         setParent(nullptr);
+    QWindowsContext::instance()->removeWindow(m_hwnd);
 }
 
 void QWindowsForeignWindow::setParent(const QPlatformWindow *newParentWindow)
