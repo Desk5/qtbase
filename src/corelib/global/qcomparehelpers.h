@@ -99,7 +99,8 @@ template <typename In> constexpr auto to_Qt(In in) noexcept
     on platforms that behave normally.
     It does nothing on the systems that have problems.
 */
-#if !defined(Q_OS_QNX) && !defined(Q_CC_GHS)
+#if !defined(Q_OS_QNX) && !defined(Q_CC_GHS) && !(defined(__GNUC__) && __GNUC__ < 11)
+
 # define QT_COMPARISON_NOEXCEPT_CHECK(Noexcept, Func) \
     constexpr auto f = []() Noexcept {}; \
     static_assert(!noexcept(f()) || noexcept(Func(lhs, rhs)), \

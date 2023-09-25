@@ -1,7 +1,11 @@
 // Copyright (C) 2022 Intel Corporation.
 // SPDX-License-Identifier: BSD-3-Clause
 
+#if defined(__GNUC__) && __GNUC__ < 9
+#include <x86intrin.h>
+#else
 #include <immintrin.h>
+#endif
 
 // Skylake AVX512 was added to GCC 4.9, Clang 3.7, and MSVC 2015.
 // Cannon Lake was added to GCC 5, Clang 3.8, and MSVC 2017 15.7,
