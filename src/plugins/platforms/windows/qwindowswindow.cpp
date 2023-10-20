@@ -842,6 +842,9 @@ void WindowCreationData::fromWindow(const QWindow *w, const Qt::WindowFlags flag
         if (flagsIn & Qt::WindowTransparentForInput)
             exStyle |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
     }
+
+    if (flagsIn & Qt::MSWindowsNoRedirectionBitmap)
+        exStyle |= WS_EX_NOREDIRECTIONBITMAP;
 }
 
 static inline bool shouldApplyDarkFrame(const QWindow *w)

@@ -235,6 +235,8 @@ namespace Qt {
         WindowDoesNotAcceptFocus = 0x00200000,
         MaximizeUsingFullscreenGeometryHint = 0x00400000,
 
+        MSWindowsNoRedirectionBitmap = 0x01000000,
+
         CustomizeWindowHint = 0x02000000,
         WindowStaysOnBottomHint = 0x04000000,
         WindowCloseButtonHint = 0x08000000,
