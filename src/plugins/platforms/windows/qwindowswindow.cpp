@@ -845,6 +845,9 @@ void WindowCreationData::fromWindow(const QWindow *w, const Qt::WindowFlags flag
         if (qEnvironmentVariableIntValue("QT_QPA_DISABLE_REDIRECTION_SURFACE"))
             exStyle |= WS_EX_NOREDIRECTIONBITMAP;
     }
+
+    if (flagsIn & Qt::MSWindowsNoRedirectionBitmap)
+        exStyle |= WS_EX_NOREDIRECTIONBITMAP;
 }
 
 static inline bool shouldApplyDarkFrame(const QWindow *w)
