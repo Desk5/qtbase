@@ -39,12 +39,16 @@ static QString toPlainText(const QString &text)
     // start plumb the dialog's text format to the platform
     // via the dialog options.
 
+#ifdef QT_NO_TEXTHTMLPARSER
+    return text;
+#else
     if (!Qt::mightBeRichText(text))
         return text;
 
     QTextDocument textDocument;
     textDocument.setHtml(text);
     return textDocument.toPlainText();
+#endif
 }
 
 static NSControlStateValue controlStateFor(Qt::CheckState state)
