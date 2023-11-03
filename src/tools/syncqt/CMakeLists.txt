@@ -16,9 +16,6 @@ if(NOT QT_INTERNAL_AVOID_OVERRIDING_SYNCQT_CONFIG)
     set(config_type CONFIG RelWithDebInfo)
 endif()
 
-if(CMAKE_OSX_ARCHITECTURES)
-    set(osx_architectures "-DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}")
-endif()
 qt_get_tool_target_name(target_name syncqt)
 # Note: configure-time tools reserve the original tool name for the imported executable.
 # To re-build syncqt use 'syncqt_build' target.
@@ -32,7 +29,6 @@ qt_internal_add_configure_time_tool(${target_name}
         -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD}
         # std::filesystem API is only available in macOS 10.15+
         -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.15
-        "${osx_architectures}"
     SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
     ${config_type}
