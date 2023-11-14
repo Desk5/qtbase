@@ -1725,6 +1725,49 @@ void QRhiD3D11::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
             cmd.args.copySubRes.srcSubRes = srcSubRes;
             cmd.args.copySubRes.hasSrcBox = true;
             cmd.args.copySubRes.srcBox = srcBox;
+        } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::CopyRT) {
+            Q_ASSERT(u.src_rt && u.dst);
+            QD3D11Texture* dstD = QRHI_RES(QD3D11Texture, u.dst);
+            QD3D11CommandBuffer::Command& cmd(cbD->commands.get());
+            auto rt = u.src_rt;
+
+            const QSize copySize = u.desc.pixelSize().isEmpty() ? rt->pixelSize() : u.desc.pixelSize();
+            const QPoint sp = u.desc.sourceTopLeft();
+            const QPoint dp = u.desc.destinationTopLeft();
+
+            cmd.cmd = QD3D11CommandBuffer::Command::CopySubRes;
+            cmd.args.copySubRes.dst = dstD->tex;
+            cmd.args.copySubRes.dstSubRes = 0;
+            cmd.args.copySubRes.dstX = dp.x();
+            cmd.args.copySubRes.dstY = dp.y();
+            cmd.args.copySubRes.dstZ = 0;
+
+            if (rt->resourceType() == QRhiResource::SwapChainRenderTarget) {
+                    auto swapChain = QRHI_RES(QRhiSwapChainRenderTarget, rt)->swapChain();
+                    QD3D11SwapChain* swapChainD = QRHI_RES(QD3D11SwapChain, swapChain);
+                    cmd.args.copySubRes.src = swapChainD->backBufferTex;
+
+            } else if (rt->resourceType() == QRhiResource::TextureRenderTarget) {
+                    auto rtDesc = QRHI_RES(QRhiTextureRenderTarget, rt)->description();
+                    if (rtDesc.cbeginColorAttachments() == rtDesc.cendColorAttachments())
+                            return;
+
+                    auto texture = rtDesc.cbeginColorAttachments()->texture();
+                    auto textureD = QRHI_RES(QD3D11Texture, texture);
+                    cmd.args.copySubRes.src = textureD->tex;
+            } else
+                    return;
+
+            cmd.args.copySubRes.srcSubRes = 0;
+            cmd.args.copySubRes.hasSrcBox = true;
+            D3D11_BOX box = {};
+            box.front = 0; box.back = 1;
+            box.left = sp.x();
+            box.top = sp.y();
+            box.right = sp.x() + copySize.width();
+            box.bottom = sp.y() + copySize.height();
+            cmd.args.copySubRes.srcBox = box;
+
         } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::Read) {
             TextureReadback readback;
             readback.desc = u.rb;

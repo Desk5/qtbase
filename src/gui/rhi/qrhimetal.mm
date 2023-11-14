@@ -2541,6 +2541,59 @@ void QRhiMetal::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
                                       destinationOrigin: MTLOriginMake(NSUInteger(dp.x()), NSUInteger(dp.y()), NSUInteger(dstIs3D ? u.desc.destinationLayer() : 0))];
 
             srcD->lastActiveFrameSlot = dstD->lastActiveFrameSlot = currentFrameSlot;
+        } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::CopyRT) {
+            Q_ASSERT(u.src_rt && u.dst);
+            auto rt = u.src_rt;
+            QMetalTexture *dstD = QRHI_RES(QMetalTexture, u.dst);
+            const bool dstIs3D = dstD->m_flags.testFlag(QRhiTexture::ThreeDimensional);
+
+            const QSize copySize = u.desc.pixelSize().isEmpty() ? rt->pixelSize() : u.desc.pixelSize();
+            const QPoint sp = u.desc.sourceTopLeft();
+            const QPoint dp = u.desc.destinationTopLeft();
+
+            ensureBlit();
+
+            id<MTLTexture> srcTex = 0;
+            switch (rt->resourceType()) {
+            case QRhiResource::SwapChainRenderTarget:
+            {
+                auto rtD = QRHI_RES(QMetalSwapChainRenderTarget, rt)->d;
+                if (rtD->colorAttCount) {
+                    QMetalSwapChain *swapChainD = QRHI_RES(QMetalSwapChain, currentSwapChain);
+                    if(swapChainD->d->curDrawable)
+                        srcTex = swapChainD->d->curDrawable.texture;
+                }
+            }
+                break;
+
+            case QRhiResource::TextureRenderTarget:
+            {
+                auto rtTex = QRHI_RES(QMetalTextureRenderTarget, rt);
+                auto firstAttachment = rtTex->m_desc.cbeginColorAttachments();
+                if(firstAttachment != rtTex->m_desc.cendColorAttachments()) {
+                    if (firstAttachment->texture()) {
+                        auto tex = QRHI_RES(QMetalTexture, firstAttachment->texture());
+                        tex->lastActiveFrameSlot = currentFrameSlot;
+                        srcTex = tex->d->tex;
+                    }
+                }
+            }
+                break;
+            default:
+                break;
+            }
+
+            [blitEnc copyFromTexture: srcTex
+                                      sourceSlice: NSUInteger(0)
+                                      sourceLevel: NSUInteger(0)
+                                      sourceOrigin: MTLOriginMake(NSUInteger(sp.x()), NSUInteger(sp.y()), NSUInteger(0))
+                                      sourceSize: MTLSizeMake(NSUInteger(copySize.width()), NSUInteger(copySize.height()), 1)
+                                      toTexture: dstD->d->tex
+                                      destinationSlice: NSUInteger(dstIs3D ? 0 : u.desc.destinationLayer())
+                                      destinationLevel: NSUInteger(u.desc.destinationLevel())
+                                      destinationOrigin: MTLOriginMake(NSUInteger(dp.x()), NSUInteger(dp.y()), NSUInteger(dstIs3D ? u.desc.destinationLayer() : 0))];
+
+            dstD->lastActiveFrameSlot = currentFrameSlot;
         } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::Read) {
             QRhiMetalData::TextureReadback readback;
             readback.activeFrameSlot = currentFrameSlot;

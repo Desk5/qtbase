@@ -1568,6 +1568,7 @@ public:
     void uploadTexture(QRhiTexture *tex, const QRhiTextureUploadDescription &desc);
     void uploadTexture(QRhiTexture *tex, const QImage &image);
     void copyTexture(QRhiTexture *dst, QRhiTexture *src, const QRhiTextureCopyDescription &desc = QRhiTextureCopyDescription());
+    void copyRTToTexture(QRhiTexture *dst, QRhiRenderTarget *rt, const QRhiTextureCopyDescription &desc = QRhiTextureCopyDescription());
     void readBackTexture(const QRhiReadbackDescription &rb, QRhiReadbackResult *result);
     void generateMips(QRhiTexture *tex);
 

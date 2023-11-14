@@ -6122,6 +6122,15 @@ void QRhiResourceUpdateBatch::copyTexture(QRhiTexture *dst, QRhiTexture *src, co
         d->textureOps.append(QRhiResourceUpdateBatchPrivate::TextureOp::copy(dst, src, desc));
 }
 
+void QRhiResourceUpdateBatch::copyRTToTexture(QRhiTexture *dst, QRhiRenderTarget *rt, const QRhiTextureCopyDescription &desc)
+{
+    const int idx = d->activeTextureOpCount++;
+    if (idx < d->textureOps.size())
+        d->textureOps[idx] = QRhiResourceUpdateBatchPrivate::TextureOp::copyRT(dst, rt, desc);
+    else
+        d->textureOps.append(QRhiResourceUpdateBatchPrivate::TextureOp::copyRT(dst, rt, desc));
+}
+
 /*!
    Enqueues a texture-to-host copy operation as described by \a rb.
 

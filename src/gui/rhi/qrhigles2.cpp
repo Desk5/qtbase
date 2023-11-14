@@ -2385,6 +2385,39 @@ void QRhiGles2::enqueueResourceUpdates(QRhiCommandBuffer *cb, QRhiResourceUpdate
 
             cmd.args.copyTex.w = copySize.width();
             cmd.args.copyTex.h = copySize.height();
+        } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::CopyRT) {
+            Q_ASSERT(u.src_rt);
+            Q_ASSERT(u.dst);
+            QGles2Texture *dstD = QRHI_RES(QGles2Texture, u.dst);
+
+            //FIXME do we need any tracking here?
+            //trackedImageBarrier(cbD, srcD, QGles2Texture::AccessRead);
+            trackedImageBarrier(cbD, dstD, QGles2Texture::AccessUpdate);
+
+            const QSize copySize = u.desc.pixelSize().isEmpty() ? u.src_rt->pixelSize() : u.desc.pixelSize();
+            // do not translate coordinates, even if sp is bottom-left from gl's pov
+            const QPoint sp = u.desc.sourceTopLeft();
+            const QPoint dp = u.desc.destinationTopLeft();
+
+            const GLenum dstFaceTargetBase = dstD->m_flags.testFlag(QRhiTexture::CubeMap) ? GL_TEXTURE_CUBE_MAP_POSITIVE_X : dstD->target;
+
+            enqueueBindFramebuffer(u.src_rt, cbD); // FIXME this might be unnecessary if we have just stopped a pass on the same FB
+
+            QGles2CommandBuffer::Command &cmd(cbD->commands.get());
+            cmd.cmd = QGles2CommandBuffer::Command::ReadbackRT;
+
+            cmd.args.readbackRT.srcX = sp.x();
+            cmd.args.readbackRT.srcY = sp.y();
+
+            cmd.args.readbackRT.dstTarget = dstD->target;
+            cmd.args.readbackRT.dstFaceTarget = dstFaceTargetBase;
+            cmd.args.readbackRT.dstTexture = dstD->texture;
+            cmd.args.readbackRT.dstLevel = u.desc.destinationLevel();
+            cmd.args.readbackRT.dstX = dp.x();
+            cmd.args.readbackRT.dstY = dp.y();
+
+            cmd.args.readbackRT.w = copySize.width();
+            cmd.args.readbackRT.h = copySize.height();
         } else if (u.type == QRhiResourceUpdateBatchPrivate::TextureOp::Read) {
             QGles2CommandBuffer::Command &cmd(cbD->commands.get());
             cmd.cmd = QGles2CommandBuffer::Command::ReadPixels;
@@ -3176,6 +3209,16 @@ void QRhiGles2::executeCommandBuffer(QRhiCommandBuffer *cb)
             f->glDeleteFramebuffers(1, &fbo);
         }
             break;
+        case QGles2CommandBuffer::Command::ReadbackRT:
+        {   // FIXME do we need to clean up the tex. binding
+            f->glBindTexture(cmd.args.readbackRT.dstTarget, cmd.args.readbackRT.dstTexture);
+            f->glCopyTexSubImage2D(cmd.args.readbackRT.dstFaceTarget, cmd.args.readbackRT.dstLevel,
+                                   cmd.args.readbackRT.dstX, cmd.args.readbackRT.dstY,
+                                   cmd.args.readbackRT.srcX, cmd.args.readbackRT.srcY,
+                                   cmd.args.readbackRT.w, cmd.args.readbackRT.h);
+        }
+            break;
+
         case QGles2CommandBuffer::Command::ReadPixels:
         {
             QRhiReadbackResult *result = cmd.args.readPixels.result;
