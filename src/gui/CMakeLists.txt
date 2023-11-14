@@ -62,6 +62,7 @@ qt_internal_add_module(Gui
     FEATURE_DEPENDENCIES
         Qt::Network
     QMAKE_MODULE_CONFIG "${qmake_module_config}"
+    CUSTOM_VERSION_TAG "DESK5=20231114"
     SOURCES
         compat/removed_api.cpp
         image/qabstractfileiconengine.cpp image/qabstractfileiconengine_p.h
