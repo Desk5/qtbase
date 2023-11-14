@@ -1477,7 +1477,8 @@ public:
 
     enum BeginPassFlag {
         ExternalContent = 0x01,
-        DoNotTrackResourcesForCompute = 0x02
+        DoNotTrackResourcesForCompute = 0x02,
+        DoNotClear = 0x04,
     };
     Q_DECLARE_FLAGS(BeginPassFlags, BeginPassFlag)
 

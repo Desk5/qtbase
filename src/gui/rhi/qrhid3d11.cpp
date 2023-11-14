@@ -1961,7 +1961,7 @@ void QRhiD3D11::beginPass(QRhiCommandBuffer *cb,
                           const QColor &colorClearValue,
                           const QRhiDepthStencilClearValue &depthStencilClearValue,
                           QRhiResourceUpdateBatch *resourceUpdates,
-                          QRhiCommandBuffer::BeginPassFlags)
+                          QRhiCommandBuffer::BeginPassFlags flags)
 {
     QD3D11CommandBuffer *cbD = QRHI_RES(QD3D11CommandBuffer, cb);
     Q_ASSERT(cbD->recordingPass == QD3D11CommandBuffer::NoPass);
@@ -1986,21 +1986,23 @@ void QRhiD3D11::beginPass(QRhiCommandBuffer *cb,
     fbCmd.cmd = QD3D11CommandBuffer::Command::SetRenderTarget;
     fbCmd.args.setRenderTarget.rt = rt;
 
-    QD3D11CommandBuffer::Command &clearCmd(cbD->commands.get());
-    clearCmd.cmd = QD3D11CommandBuffer::Command::Clear;
-    clearCmd.args.clear.rt = rt;
-    clearCmd.args.clear.mask = 0;
-    if (rtD->colorAttCount && wantsColorClear)
-        clearCmd.args.clear.mask |= QD3D11CommandBuffer::Command::Color;
-    if (rtD->dsAttCount && wantsDsClear)
-        clearCmd.args.clear.mask |= QD3D11CommandBuffer::Command::Depth | QD3D11CommandBuffer::Command::Stencil;
+    if(!(flags & QRhiCommandBuffer::DoNotClear)) {
+        QD3D11CommandBuffer::Command &clearCmd(cbD->commands.get());
+        clearCmd.cmd = QD3D11CommandBuffer::Command::Clear;
+        clearCmd.args.clear.rt = rt;
+        clearCmd.args.clear.mask = 0;
+        if (rtD->colorAttCount && wantsColorClear)
+            clearCmd.args.clear.mask |= QD3D11CommandBuffer::Command::Color;
+        if (rtD->dsAttCount && wantsDsClear)
+            clearCmd.args.clear.mask |= QD3D11CommandBuffer::Command::Depth | QD3D11CommandBuffer::Command::Stencil;
 
-    clearCmd.args.clear.c[0] = float(colorClearValue.redF());
-    clearCmd.args.clear.c[1] = float(colorClearValue.greenF());
-    clearCmd.args.clear.c[2] = float(colorClearValue.blueF());
-    clearCmd.args.clear.c[3] = float(colorClearValue.alphaF());
-    clearCmd.args.clear.d = depthStencilClearValue.depthClearValue();
-    clearCmd.args.clear.s = depthStencilClearValue.stencilClearValue();
+        clearCmd.args.clear.c[0] = float(colorClearValue.redF());
+        clearCmd.args.clear.c[1] = float(colorClearValue.greenF());
+        clearCmd.args.clear.c[2] = float(colorClearValue.blueF());
+        clearCmd.args.clear.c[3] = float(colorClearValue.alphaF());
+        clearCmd.args.clear.d = depthStencilClearValue.depthClearValue();
+        clearCmd.args.clear.s = depthStencilClearValue.stencilClearValue();
+    }
 
     cbD->recordingPass = QD3D11CommandBuffer::RenderPass;
     cbD->currentTarget = rt;

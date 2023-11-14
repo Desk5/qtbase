@@ -2703,7 +2703,7 @@ void QRhiMetal::beginPass(QRhiCommandBuffer *cb,
                           const QColor &colorClearValue,
                           const QRhiDepthStencilClearValue &depthStencilClearValue,
                           QRhiResourceUpdateBatch *resourceUpdates,
-                          QRhiCommandBuffer::BeginPassFlags)
+                          QRhiCommandBuffer::BeginPassFlags flags)
 {
     QMetalCommandBuffer *cbD = QRHI_RES(QMetalCommandBuffer, cb);
     Q_ASSERT(cbD->recordingPass == QMetalCommandBuffer::NoPass);
@@ -2774,6 +2774,11 @@ void QRhiMetal::beginPass(QRhiCommandBuffer *cb,
     default:
         Q_UNREACHABLE();
         break;
+    }
+
+    if(flags & QRhiCommandBuffer::DoNotClear) {
+        for (uint i = 0; i < uint(rtD->colorAttCount); ++i)
+            cbD->d->currentPassRpDesc.colorAttachments[i].loadAction = MTLLoadActionLoad;
     }
 
     for (uint i = 0; i < uint(rtD->colorAttCount); ++i) {

@@ -4216,19 +4216,21 @@ void QRhiGles2::beginPass(QRhiCommandBuffer *cb,
     bool wantsColorClear, wantsDsClear;
     QGles2RenderTargetData *rtD = enqueueBindFramebuffer(rt, cbD, &wantsColorClear, &wantsDsClear);
 
-    QGles2CommandBuffer::Command &clearCmd(cbD->commands.get());
-    clearCmd.cmd = QGles2CommandBuffer::Command::Clear;
-    clearCmd.args.clear.mask = 0;
-    if (rtD->colorAttCount && wantsColorClear)
-        clearCmd.args.clear.mask |= GL_COLOR_BUFFER_BIT;
-    if (rtD->dsAttCount && wantsDsClear)
-        clearCmd.args.clear.mask |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
-    clearCmd.args.clear.c[0] = float(colorClearValue.redF());
-    clearCmd.args.clear.c[1] = float(colorClearValue.greenF());
-    clearCmd.args.clear.c[2] = float(colorClearValue.blueF());
-    clearCmd.args.clear.c[3] = float(colorClearValue.alphaF());
-    clearCmd.args.clear.d = depthStencilClearValue.depthClearValue();
-    clearCmd.args.clear.s = depthStencilClearValue.stencilClearValue();
+    if(!(flags & QRhiCommandBuffer::DoNotClear)) {
+        QGles2CommandBuffer::Command &clearCmd(cbD->commands.get());
+        clearCmd.cmd = QGles2CommandBuffer::Command::Clear;
+        clearCmd.args.clear.mask = 0;
+        if (rtD->colorAttCount && wantsColorClear)
+            clearCmd.args.clear.mask |= GL_COLOR_BUFFER_BIT;
+        if (rtD->dsAttCount && wantsDsClear)
+            clearCmd.args.clear.mask |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+        clearCmd.args.clear.c[0] = float(colorClearValue.redF());
+        clearCmd.args.clear.c[1] = float(colorClearValue.greenF());
+        clearCmd.args.clear.c[2] = float(colorClearValue.blueF());
+        clearCmd.args.clear.c[3] = float(colorClearValue.alphaF());
+        clearCmd.args.clear.d = depthStencilClearValue.depthClearValue();
+        clearCmd.args.clear.s = depthStencilClearValue.stencilClearValue();
+    }
 
     cbD->recordingPass = QGles2CommandBuffer::RenderPass;
     cbD->passNeedsResourceTracking = !flags.testFlag(QRhiCommandBuffer::DoNotTrackResourcesForCompute);
