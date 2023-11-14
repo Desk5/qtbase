@@ -251,6 +251,8 @@ public:
 
     bool warningsAreErrors() const { return m_warningsAreErrors; }
 
+    std::string customVersionTag() const { return m_customVersionTag; }
+
     void printHelp() const
     {
         std::cout << "Usage: syncqt -sourceDir <dir> -binaryDir <dir> -module <module name>"
@@ -351,6 +353,7 @@ private:
             { "-stagingDir", { &m_stagingDir, true } },
             { "-versionScript", { &m_versionScriptFile, true } },
             { "-publicNamespaceFilter", { &publicNamespaceFilter, true } },
+            { "-customVersionTag", { &m_customVersionTag, true } },
         };
 
         static const std::unordered_map<std::string, CommandLineOption<std::set<std::string>>>
@@ -537,6 +540,7 @@ private:
     std::regex m_ssgHeadersRegex;
     std::regex m_privateHeadersRegex;
     std::regex m_publicNamespaceRegex;
+    std::string m_customVersionTag;
 
     bool m_isValid;
 };
@@ -1548,8 +1552,15 @@ public:
                << "#define QT_" << moduleNameUpper << "_VERSION_H\n\n"
                << "#define " << moduleNameUpper << "_VERSION_STR \"" << QT_VERSION_STR << "\"\n\n"
                << "#define " << moduleNameUpper << "_VERSION "
-               << "0x0" << QT_VERSION_MAJOR << "0" << QT_VERSION_MINOR << "0" << QT_VERSION_PATCH
-               << "\n\n"
+               << "0x0" << QT_VERSION_MAJOR << "0" << QT_VERSION_MINOR << "0" << QT_VERSION_PATCH << "\n";
+
+        if(!m_commandLineArgs->customVersionTag().empty()) {
+            static std::regex cEquals("=");
+            buffer << "#define " << moduleNameUpper << "_" << 
+                std::regex_replace(m_commandLineArgs->customVersionTag(), cEquals, " ", std::regex_constants::format_first_only) << "\n";
+        }
+
+        buffer << "\n"
                << "#endif // QT_" << moduleNameUpper << "_VERSION_H\n";
 
         return writeIfDifferent(outputFile, buffer.str());

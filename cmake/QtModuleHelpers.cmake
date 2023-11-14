@@ -21,6 +21,7 @@ macro(qt_internal_get_internal_add_module_keywords option_args single_args multi
         ${__qt_internal_sbom_optional_args}
     )
     set(${single_args}
+        CUSTOM_VERSION_TAG
         MODULE_INCLUDE_NAME
         MODULE_INTERFACE_NAME
         CONFIG_MODULE_NAME
@@ -241,6 +242,10 @@ function(qt_internal_add_module target)
     if(arg_HEADER_MODULE)
         set_target_properties(${target} PROPERTIES _qt_is_header_module TRUE)
         set_property(TARGET ${target} APPEND PROPERTY EXPORT_PROPERTIES _qt_is_header_module)
+    endif()
+
+    if(arg_CUSTOM_VERSION_TAG)
+        set_target_properties(${target} PROPERTIES custom_version_tag "${arg_CUSTOM_VERSION_TAG}")
     endif()
 
     if(NOT arg_CONFIG_MODULE_NAME)

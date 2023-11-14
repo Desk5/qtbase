@@ -103,6 +103,12 @@ function(qt_internal_target_sync_headers target module_headers module_headers_ge
         )
     endif()
 
+    get_target_property(custom_version_tag ${target} custom_version_tag)
+    set(custom_version_tag_argument "")
+    if(custom_version_tag)
+        set(custom_version_tag_argument "-customVersionTag" "${custom_version_tag}")
+    endif()
+
     set(common_syncqt_arguments
         -module "${module}"
         -sourceDir "${source_dir_real}"
@@ -120,6 +126,7 @@ function(qt_internal_target_sync_headers target module_headers module_headers_ge
         ${public_namespaces_filter}
         ${non_qt_module_argument}
         ${internal_module_argument}
+        ${custom_version_tag_argument}
     )
 
     if(QT_INTERNAL_ENABLE_SYNCQT_DEBUG_OUTPUT)
