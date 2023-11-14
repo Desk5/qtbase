@@ -329,6 +329,7 @@ struct QGles2CommandBuffer : public QRhiCommandBuffer
             BufferSubData,
             GetBufferSubData,
             CopyTex,
+            ReadbackRT,
             ReadPixels,
             SubImage,
             CompressedImage,
@@ -448,6 +449,18 @@ struct QGles2CommandBuffer : public QRhiCommandBuffer
                 int w;
                 int h;
             } copyTex;
+            struct {
+                int srcX;
+                int srcY;
+                GLenum dstTarget;
+                GLuint dstTexture;
+                GLenum dstFaceTarget;
+                int dstLevel;
+                int dstX;
+                int dstY;
+                int w;
+                int h;
+            } readbackRT;
             struct {
                 QRhiReadbackResult *result;
                 GLuint texture;

@@ -466,6 +466,7 @@ public:
         enum Type {
             Upload,
             Copy,
+            CopyRT,
             Read,
             GenMips
         };
@@ -478,6 +479,7 @@ public:
         using MipLevelUploadList = std::array<QVector<QRhiTextureSubresourceUploadDescription>, QRhi::MAX_MIP_LEVELS>;
         QVarLengthArray<MipLevelUploadList, 6> subresDesc;
         QRhiTexture *src;
+        QRhiRenderTarget *src_rt;
         QRhiTextureCopyDescription desc;
         QRhiReadbackDescription rb;
         QRhiReadbackResult *result;
@@ -504,6 +506,16 @@ public:
             op.type = Copy;
             op.dst = dst;
             op.src = src;
+            op.desc = desc;
+            return op;
+        }
+
+        static TextureOp copyRT(QRhiTexture *dst, QRhiRenderTarget *src, const QRhiTextureCopyDescription &desc)
+        {
+            TextureOp op = {};
+            op.type = CopyRT;
+            op.dst = dst;
+            op.src_rt = src;
             op.desc = desc;
             return op;
         }
