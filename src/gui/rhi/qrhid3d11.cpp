@@ -4767,6 +4767,16 @@ void QD3D11SwapChain::destroy()
         dcompTarget = nullptr;
     }
 
+    if (wincompInterop) {
+        wincompInterop->Release();
+        wincompInterop = nullptr;
+    }
+
+    if (wincompBrush) {
+        wincompBrush->Release();
+        wincompBrush = nullptr;
+    }
+
     QRHI_RES_RHI(QRhiD3D11);
     if (rhiD)
         rhiD->unregisterResource(this);
@@ -4948,7 +4958,29 @@ bool QD3D11SwapChain::createOrResize()
     QRHI_RES_RHI(QRhiD3D11);
 
     if (m_flags.testFlag(SurfaceHasPreMulAlpha) || m_flags.testFlag(SurfaceHasNonPreMulAlpha)) {
-        if (rhiD->ensureDirectCompositionDevice()) {
+        QVariant prop_wincomp, prop_wincompBrush;
+        if (window) {
+            prop_wincomp = window->property("_wincomp");
+            prop_wincompBrush = window->property("_wincompBrush");
+        }
+
+        if (prop_wincomp.isValid() && prop_wincompBrush.isValid()) {
+            if (wincompInterop)
+                wincompInterop->Release();
+            wincompInterop = nullptr;
+            if (wincompBrush)
+                wincompBrush->Release();
+            wincompBrush = nullptr;
+
+            auto wincompUnk = static_cast<IUnknown*>(prop_wincomp.value<void*>());
+            if(wincompUnk)
+                wincompUnk->QueryInterface(&wincompInterop); // this does an implicit AddRef
+
+            auto wincompBrushUnk = static_cast<IUnknown*>(prop_wincompBrush.value<void*>());
+            if(wincompBrushUnk)
+                wincompBrushUnk->QueryInterface(&wincompBrush); // this does an implicit AddRef
+
+        } else if (rhiD->ensureDirectCompositionDevice()) {
             if (!dcompTarget) {
                 hr = rhiD->dcompDevice->CreateTargetForHwnd(hwnd, true, &dcompTarget);
                 if (FAILED(hr)) {
@@ -5030,7 +5062,9 @@ bool QD3D11SwapChain::createOrResize()
         desc.Scaling = DXGI_SCALING_NONE;
         desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
-        if (dcompVisual) {
+        bool compositing = dcompVisual || wincompBrush;
+
+        if (compositing) {
             // With DirectComposition setting AlphaMode to STRAIGHT fails the
             // swapchain creation, whereas the result seems to be identical
             // with any of the other values, including IGNORE. (?)
@@ -5045,7 +5079,7 @@ bool QD3D11SwapChain::createOrResize()
         IDXGIFactory2 *fac = static_cast<IDXGIFactory2 *>(rhiD->dxgiFactory);
         IDXGISwapChain1 *sc1;
 
-        if (dcompVisual)
+        if (compositing)
             hr = fac->CreateSwapChainForComposition(rhiD->dev, &desc, nullptr, &sc1);
         else
             hr = fac->CreateSwapChainForHwnd(rhiD->dev, hwnd, &desc, nullptr, nullptr, &sc1);
@@ -5056,7 +5090,7 @@ bool QD3D11SwapChain::createOrResize()
         if (FAILED(hr) && m_format != SDR) {
             colorFormat = DEFAULT_FORMAT;
             desc.Format = DEFAULT_FORMAT;
-            if (dcompVisual)
+            if (compositing)
                 hr = fac->CreateSwapChainForComposition(rhiD->dev, &desc, nullptr, &sc1);
             else
                 hr = fac->CreateSwapChainForHwnd(rhiD->dev, hwnd, &desc, nullptr, nullptr, &sc1);
@@ -5088,6 +5122,15 @@ bool QD3D11SwapChain::createOrResize()
                     qWarning("Failed to set content for Direct Composition visual: %s",
                              qPrintable(QSystemError::windowsComString(hr)));
                 }
+
+            }
+            else if (wincompBrush) {
+                ABI::Windows::UI::Composition::ICompositionSurface* wincompSurface = nullptr;
+                wincompInterop->CreateCompositionSurfaceForSwapChain(swapChain, &wincompSurface);
+                wincompInterop->Release();
+
+                wincompBrush->put_Surface(wincompSurface);
+                wincompSurface->Release();
             }
         }
         if (FAILED(hr)) {

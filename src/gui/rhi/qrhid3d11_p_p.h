@@ -23,6 +23,8 @@
 #include <d3d11_1.h>
 #include <dxgi1_6.h>
 #include <dcomp.h>
+#include <windows.ui.composition.h>
+#include <windows.ui.composition.interop.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -596,6 +598,8 @@ struct QD3D11SwapChain : public QRhiSwapChain
     UINT swapInterval = 1;
     IDCompositionTarget *dcompTarget = nullptr;
     IDCompositionVisual *dcompVisual = nullptr;
+    ABI::Windows::UI::Composition::ICompositorInterop* wincompInterop = nullptr;
+    ABI::Windows::UI::Composition::ICompositionSurfaceBrush* wincompBrush = nullptr;
 };
 
 class QRhiD3D11 : public QRhiImplementation
