@@ -15,6 +15,7 @@
 #include <QtGui/qopenglcontext.h>
 #include <QtGui/qscreen.h>
 #include <qpa/qplatformscreen.h>
+#include <private/qhighdpiscaling_p.h>
 
 QT_BEGIN_NAMESPACE
 
@@ -98,7 +99,7 @@ void *QWindowsNativeInterface::nativeResourceForCursor(const QByteArray &resourc
     if (resource == QByteArrayLiteral("hcursor")) {
         if (const QScreen *primaryScreen = QGuiApplication::primaryScreen()) {
             if (const QPlatformCursor *pCursor= primaryScreen->handle()->cursor())
-                return static_cast<const QWindowsCursor *>(pCursor)->hCursor(cursor);
+                return static_cast<const QWindowsCursor *>(pCursor)->hCursor(cursor, QHighDpiScaling::factor(primaryScreen));
         }
     }
     return nullptr;
