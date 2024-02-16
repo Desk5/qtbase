@@ -14,20 +14,23 @@ QT_BEGIN_NAMESPACE
 
 struct QWindowsPixmapCursorCacheKey
 {
-    explicit QWindowsPixmapCursorCacheKey(const QCursor &c);
+    explicit QWindowsPixmapCursorCacheKey(const QCursor &c, qreal scaleFactor);
 
     qint64 bitmapCacheKey;
     qint64 maskCacheKey;
+    QPoint hotSpot;
+    qreal scaleFactor;
 };
 
 inline bool operator==(const QWindowsPixmapCursorCacheKey &k1, const QWindowsPixmapCursorCacheKey &k2)
 {
-    return k1.bitmapCacheKey == k2.bitmapCacheKey && k1.maskCacheKey == k2.maskCacheKey;
+    return k1.bitmapCacheKey == k2.bitmapCacheKey && k1.maskCacheKey == k2.maskCacheKey && 
+	    k1.hotSpot == k2.hotSpot && k1.scaleFactor == k2.scaleFactor;
 }
 
 inline size_t qHash(const QWindowsPixmapCursorCacheKey &k, size_t seed) noexcept
 {
-    return (size_t(k.bitmapCacheKey) + size_t(k.maskCacheKey)) ^ seed;
+    return (size_t(k.bitmapCacheKey) + size_t(k.maskCacheKey) + (k.hotSpot.x()<<10) + (k.hotSpot.y()<<20) | int(k.scaleFactor*256)) ^ seed;
 }
 
 class CursorHandle
@@ -92,7 +95,7 @@ public:
 
     QPixmap dragDefaultCursor(Qt::DropAction action) const;
 
-    HCURSOR hCursor(const QCursor &c) const;
+    HCURSOR hCursor(const QCursor &c, qreal scaleFactor) const;
 
 private:
     typedef QHash<Qt::CursorShape, CursorHandlePtr> StandardCursorCache;

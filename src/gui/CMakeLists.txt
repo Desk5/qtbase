@@ -55,7 +55,7 @@ qt_internal_add_module(Gui
     FEATURE_DEPENDENCIES
         Qt::Network
     QMAKE_MODULE_CONFIG "${qmake_module_config}"
-    CUSTOM_VERSION_TAG "DESK5=20231219"
+    CUSTOM_VERSION_TAG "DESK5=20240216"
     SOURCES
         accessible/qaccessible.h
         accessible/qplatformaccessibility.h
