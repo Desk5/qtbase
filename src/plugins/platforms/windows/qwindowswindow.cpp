@@ -2881,7 +2881,7 @@ void QWindowsWindow::setFullFrameMargins(const QMargins &newMargins)
 void QWindowsWindow::updateFullFrameMargins()
 {
     // QTBUG-82580: If a native menu is present, force a WM_NCCALCSIZE.
-    if (GetMenu(m_data.hwnd))
+    if (GetMenu(m_data.hwnd) || (m_data.flags & Qt::MSWindowsNoRedirectionBitmap))
         QWindowsContext::forceNcCalcSize(m_data.hwnd);
     else
         calculateFullFrameMargins();
