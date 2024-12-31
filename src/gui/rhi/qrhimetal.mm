@@ -2114,7 +2114,7 @@ QRhi::FrameOpResult QRhiMetal::beginFrame(QRhiSwapChain *swapChain, QRhi::BeginF
     // Do not let the command buffer mess with the refcount of objects. We do
     // have a proper render loop and will manage lifetimes similarly to other
     // backends (Vulkan).
-    swapChainD->cbWrapper.d->cb = [d->cmdQueue commandBufferWithUnretainedReferences];
+    swapChainD->cbWrapper.d->cb = [[d->cmdQueue commandBufferWithUnretainedReferences] retain];
 
     QMetalRenderTargetData::ColorAtt colorAtt;
     if (swapChainD->samples > 1) {
@@ -2174,6 +2174,8 @@ QRhi::FrameOpResult QRhiMetal::endFrame(QRhiSwapChain *swapChain, QRhi::EndFrame
     }];
 
     [swapChainD->cbWrapper.d->cb commit];
+    [swapChainD->cbWrapper.d->cb release];
+    swapChainD->cbWrapper.d->cb = nil;
 
     [d->captureScope endScope];
 
@@ -2201,7 +2203,7 @@ QRhi::FrameOpResult QRhiMetal::beginOffscreenFrame(QRhiCommandBuffer **cb, QRhi:
 
     d->ofr.active = true;
     *cb = &d->ofr.cbWrapper;
-    d->ofr.cbWrapper.d->cb = [d->cmdQueue commandBufferWithUnretainedReferences];
+    d->ofr.cbWrapper.d->cb = [[d->cmdQueue commandBufferWithUnretainedReferences] retain];
 
     executeDeferredReleases();
     d->ofr.cbWrapper.resetState();
@@ -2221,6 +2223,9 @@ QRhi::FrameOpResult QRhiMetal::endOffscreenFrame(QRhi::EndFrameFlags flags)
     // offscreen frames wait for completion, unlike swapchain ones
     [d->ofr.cbWrapper.d->cb waitUntilCompleted];
 
+    [d->ofr.cbWrapper.d->cb release];
+    d->ofr.cbWrapper.d->cb = nil;
+
     finishActiveReadbacks(true);
 
     return QRhi::FrameOpSuccess;
@@ -2235,11 +2240,13 @@ QRhi::FrameOpResult QRhiMetal::finish()
             Q_ASSERT(!currentSwapChain);
             Q_ASSERT(d->ofr.cbWrapper.recordingPass == QMetalCommandBuffer::NoPass);
             cb = d->ofr.cbWrapper.d->cb;
+            d->ofr.cbWrapper.d->cb = nil;
         } else {
             Q_ASSERT(currentSwapChain);
             swapChainD = currentSwapChain;
             Q_ASSERT(swapChainD->cbWrapper.recordingPass == QMetalCommandBuffer::NoPass);
             cb = swapChainD->cbWrapper.d->cb;
+            swapChainD->cbWrapper.d->cb = nil;
         }
     }
 
@@ -2259,13 +2266,14 @@ QRhi::FrameOpResult QRhiMetal::finish()
     if (cb) {
         [cb commit];
         [cb waitUntilCompleted];
+        [cb release];
     }
 
     if (inFrame) {
         if (d->ofr.active)
-            d->ofr.cbWrapper.d->cb = [d->cmdQueue commandBufferWithUnretainedReferences];
+            d->ofr.cbWrapper.d->cb = [[d->cmdQueue commandBufferWithUnretainedReferences] retain];
         else
-            swapChainD->cbWrapper.d->cb = [d->cmdQueue commandBufferWithUnretainedReferences];
+            swapChainD->cbWrapper.d->cb = [[d->cmdQueue commandBufferWithUnretainedReferences] retain];
     }
 
     executeDeferredReleases(true);
