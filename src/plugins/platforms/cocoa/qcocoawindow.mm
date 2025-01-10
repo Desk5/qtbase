@@ -1522,6 +1522,7 @@ void QCocoaWindow::recreateWindowIfNeeded()
             qCDebug(lcQpaWindow) << "Ensuring that" << m_view << "is content view for" << newWindow;
             [m_view setPostsFrameChangedNotifications:NO];
             [newWindow setContentView:m_view];
+            [newWindow setAcceptsMouseMovedEvents: YES];
             [m_view setPostsFrameChangedNotifications:YES];
 
             m_nsWindow = newWindow;
