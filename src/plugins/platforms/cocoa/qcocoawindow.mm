@@ -1435,12 +1435,14 @@ bool QCocoaWindow::windowIsPopupType(Qt::WindowType type) const
     Being the content view of a NSWindow means the QWindow is
     the highest accessible NSView object in the window's view
     hierarchy.
+    Desk5 modification: this also returns true if the view is one level deep, to
+    compensate for `_q_cocoaShimView`
 
     This is the case if the QWindow is a top level window.
 */
 bool QCocoaWindow::isContentView() const
 {
-    return m_view.window.contentView == m_view;
+    return m_view.window.contentView == m_view || m_view.window.contentView == m_view.superview;
 }
 
 /*!
@@ -1522,8 +1524,18 @@ void QCocoaWindow::recreateWindowIfNeeded()
         // Move view to new NSWindow if needed
         if (auto *newWindow = createNSWindow(shouldBePanel)) {
             qCDebug(lcQpaWindow) << "Ensuring that" << m_view << "is content view for" << newWindow;
+            QVariant cocoaShimView = window()->property("_q_cocoaShimView");
+            NSView *shimView = (NSView*)cocoaShimView.value<void*>();
             [m_view setPostsFrameChangedNotifications:NO];
-            [newWindow setContentView:m_view];
+            if(shimView) {
+                m_view.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+                [shimView addSubview: m_view];
+                [newWindow setContentView: shimView];
+            } else {
+                m_view.autoresizingMask = 0;
+                [newWindow setContentView: m_view];
+            }
+
             [newWindow setAcceptsMouseMovedEvents: YES];
             [m_view setPostsFrameChangedNotifications:YES];
 
