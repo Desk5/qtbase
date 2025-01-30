@@ -886,8 +886,16 @@ QWindowsWindowData
 
     // Capture events before CreateWindowEx() returns. The context is cleared in
     // the QWindowsWindow constructor.
+
+    QMargins customMargins = data.customMargins;
+    if(w->property("_q_windowsClientAreaIncludesTitlebar").toBool()) {
+        RECT rect1 = { 0, 0, 100, 100 };
+        AdjustWindowRectExForDpi(&rect1, style, false, exStyle, 96 * screen->devicePixelRatio());
+        customMargins = { 0, rect1.top, 0, 0 };
+    }
+
     const QWindowCreationContextPtr context(new QWindowCreationContext(w, screen, data.geometry,
-                                                                       rect, data.customMargins,
+                                                                       rect, customMargins,
                                                                        style, exStyle));
     QWindowsContext::instance()->setWindowCreationContext(context);
 
