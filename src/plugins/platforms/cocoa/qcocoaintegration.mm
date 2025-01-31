@@ -40,7 +40,6 @@
 #include <QtGui/private/qfontengine_coretext_p.h>
 
 #include <IOKit/graphics/IOGraphicsLib.h>
-#include <UniformTypeIdentifiers/UTCoreTypes.h>
 
 #include <inttypes.h>
 
@@ -447,8 +446,8 @@ void QCocoaIntegration::focusWindowChanged(QWindow *focusWindow)
         return;
 
     static bool hasDefaultApplicationIcon = [](){
-        NSImage *genericApplicationIcon = [NSWorkspace.sharedWorkspace
-            iconForContentType:UTTypeApplicationBundle];
+        NSImage *genericApplicationIcon = [[NSWorkspace sharedWorkspace]
+            iconForFileType:NSFileTypeForHFSTypeCode(kGenericApplicationIcon)];
         NSImage *applicationIcon = [NSImage imageNamed:NSImageNameApplicationIcon];
 
         NSRect rect = NSMakeRect(0, 0, 32, 32);

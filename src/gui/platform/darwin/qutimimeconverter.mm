@@ -3,7 +3,6 @@
 
 #include <ImageIO/ImageIO.h>
 #include <CoreFoundation/CoreFoundation.h>
-#include <UniformTypeIdentifiers/UTCoreTypes.h>
 
 #include <QtCore/qsystemdetection.h>
 #include <QtCore/qurl.h>
@@ -785,7 +784,7 @@ QList<QByteArray> QMacMimeTiff::convertFromMime(const QString &mime,
 
     QCFType<CFMutableDataRef> data = CFDataCreateMutable(0, 0);
     QCFType<CGImageDestinationRef> imageDestination = CGImageDestinationCreateWithData(data,
-                                                        (CFStringRef)UTTypeTIFF.identifier, 1, 0);
+                                                                        kUTTypeTIFF, 1, 0);
 
     if (!imageDestination)
         return QList<QByteArray>();
