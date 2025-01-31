@@ -2339,7 +2339,7 @@ QRhi::FrameOpResult QRhiMetal::beginFrame(QRhiSwapChain *swapChain, QRhi::BeginF
 
     [d->captureScope beginScope];
 
-    swapChainD->cbWrapper.d->cb = d->newCommandBuffer();
+    swapChainD->cbWrapper.d->cb = [ d->newCommandBuffer() retain];
 
     QMetalRenderTargetData::ColorAtt colorAtt;
     if (swapChainD->samples > 1) {
@@ -2459,6 +2459,9 @@ QRhi::FrameOpResult QRhiMetal::endFrame(QRhiSwapChain *swapChain, QRhi::EndFrame
     // Must not hold on to the drawable, regardless of needsPresent
     [swapChainD->d->curDrawable release];
     swapChainD->d->curDrawable = nil;
+    
+    [commandBuffer release];
+    swapChainD->cbWrapper.d->cb = nil;
 
     [d->captureScope endScope];
 
@@ -2478,7 +2481,7 @@ QRhi::FrameOpResult QRhiMetal::beginOffscreenFrame(QRhiCommandBuffer **cb, QRhi:
 
     d->ofr.active = true;
     *cb = &d->ofr.cbWrapper;
-    d->ofr.cbWrapper.d->cb = d->newCommandBuffer();
+    d->ofr.cbWrapper.d->cb = [ d->newCommandBuffer() retain];
 
     executeDeferredReleases();
     d->ofr.cbWrapper.resetState(d->ofr.lastGpuTime);
@@ -2503,6 +2506,8 @@ QRhi::FrameOpResult QRhiMetal::endOffscreenFrame(QRhi::EndFrameFlags flags)
     d->ofr.lastGpuTime += cb.GPUEndTime - cb.GPUStartTime;
 
     finishActiveReadbacks(true);
+    [cb release];
+    d->ofr.cbWrapper.d->cb = nil;
 
     return QRhi::FrameOpSuccess;
 }
@@ -2516,11 +2521,13 @@ QRhi::FrameOpResult QRhiMetal::finish()
             Q_ASSERT(!currentSwapChain);
             Q_ASSERT(d->ofr.cbWrapper.recordingPass == QMetalCommandBuffer::NoPass);
             cb = d->ofr.cbWrapper.d->cb;
+            d->ofr.cbWrapper.d->cb = nil;
         } else {
             Q_ASSERT(currentSwapChain);
             swapChainD = currentSwapChain;
             Q_ASSERT(swapChainD->cbWrapper.recordingPass == QMetalCommandBuffer::NoPass);
             cb = swapChainD->cbWrapper.d->cb;
+            swapChainD->cbWrapper.d->cb = nil;
         }
     }
 
@@ -2538,15 +2545,16 @@ QRhi::FrameOpResult QRhiMetal::finish()
     if (cb) {
         [cb commit];
         [cb waitUntilCompleted];
+        [cb release];
     }
 
     if (inFrame) {
         if (d->ofr.active) {
             d->ofr.lastGpuTime += cb.GPUEndTime - cb.GPUStartTime;
-            d->ofr.cbWrapper.d->cb = d->newCommandBuffer();
+            d->ofr.cbWrapper.d->cb = [ d->newCommandBuffer() retain];
         } else {
             swapChainD->d->lastGpuTime[currentFrameSlot] += cb.GPUEndTime - cb.GPUStartTime;
-            swapChainD->cbWrapper.d->cb = d->newCommandBuffer();
+            swapChainD->cbWrapper.d->cb = [ d->newCommandBuffer() retain];
         }
     }
 
