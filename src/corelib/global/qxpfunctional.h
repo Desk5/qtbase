@@ -83,8 +83,14 @@ protected:
     template <typename... Ts>
     using is_invocable_using = std::conditional_t<
             noex,
+#if defined(__GNUC__) && __GNUC__ < 11
+// there seems to be an issue with gcc-8 here
+            std::is_nothrow_invocable<Ts..., ArgTypes...>,
+            std::is_invocable<Ts..., ArgTypes...>
+#else
             std::is_nothrow_invocable_r<R, Ts..., ArgTypes...>,
             std::is_invocable_r<R, Ts..., ArgTypes...>
+#endif
         >;
 
     using ThunkPtr = R(*)(BoundEntityType, ArgTypes&&...) noexcept(noex);
