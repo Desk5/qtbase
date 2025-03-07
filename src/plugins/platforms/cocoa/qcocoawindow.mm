@@ -1298,6 +1298,10 @@ void QCocoaWindow::windowWillStartLiveResize()
     // child windows, so we know if it's safe to update
     // the window unthrottled outside of the main thread.
     m_inLiveResize = true;
+    if(QCocoaWindow::s_windowUnderMouse == this) {
+        s_windowUnderMouse = nullptr;
+        QWindowSystemInterface::handleLeaveEvent(window());
+    }
 }
 
 bool QCocoaWindow::inLiveResize() const
