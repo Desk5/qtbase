@@ -450,22 +450,33 @@ void QCocoaWindow::setVisible(bool visible)
                 } else if (window()->modality() == Qt::ApplicationModal) {
                     // Show the window as application modal
                     eventDispatcher()->beginModalSession(window());
-                } else if (m_view.window.canBecomeKeyWindow) {
-                    bool shouldBecomeKeyNow = !NSApp.modalWindow
-                                              || m_view.window.worksWhenModal
-                                              || !NSApp.modalWindow.visible;
-
-                    // Panels with becomesKeyOnlyIfNeeded set should not activate until a view
-                    // with needsPanelToBecomeKey, for example a line edit, is clicked.
-                    if ([m_view.window isKindOfClass:[NSPanel class]])
-                        shouldBecomeKeyNow &= !(static_cast<NSPanel*>(m_view.window).becomesKeyOnlyIfNeeded);
-
-                    if (shouldBecomeKeyNow)
-                        [m_view.window makeKeyAndOrderFront:nil];
-                    else
-                        [m_view.window orderFront:nil];
                 } else {
-                    [m_view.window orderFront:nil];
+                    if(parentCocoaWindow) { // configure the new window as a child of its transient parent
+                                            // this ensures that it will display on top
+                        NSWindow *nativeParentWindow = parentCocoaWindow->nativeWindow();
+                        [nativeParentWindow addChildWindow: m_view.window ordered: NSWindowAbove];
+                    } else {
+                        if(m_view.window && m_view.window.parentWindow) // unparent
+                            [m_view.window.parentWindow removeChildWindow: m_view.window];
+                    }
+
+                    if (m_view.window.canBecomeKeyWindow) {
+                        bool shouldBecomeKeyNow = !NSApp.modalWindow
+                                                  || m_view.window.worksWhenModal
+                                                  || !NSApp.modalWindow.visible;
+
+                        // Panels with becomesKeyOnlyIfNeeded set should not activate until a view
+                        // with needsPanelToBecomeKey, for example a line edit, is clicked.
+                        if ([m_view.window isKindOfClass:[NSPanel class]])
+                            shouldBecomeKeyNow &= !(static_cast<NSPanel*>(m_view.window).becomesKeyOnlyIfNeeded);
+
+                        if (shouldBecomeKeyNow)
+                            [m_view.window makeKeyAndOrderFront:nil];
+                        else
+                            [m_view.window orderFront:nil];
+                    } else {
+                        [m_view.window orderFront:nil];
+                    }
                 }
             }
         }
@@ -514,6 +525,9 @@ void QCocoaWindow::setVisible(bool visible)
         }
 
         m_view.hidden = YES;
+
+        if(m_view.window && m_view.window.parentWindow) // unparent
+            [m_view.window.parentWindow removeChildWindow: m_view.window];
 
         if (parentCocoaWindow && window()->type() == Qt::Popup) {
             NSWindow *nativeParentWindow = parentCocoaWindow->nativeWindow();
