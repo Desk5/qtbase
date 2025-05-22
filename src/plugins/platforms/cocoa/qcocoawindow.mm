@@ -909,6 +909,9 @@ void QCocoaWindow::windowWillEnterFullScreen()
     if (!isContentView())
         return;
 
+    if (isForeignWindow())
+        return;
+
     updateNormalGeometry();
 
     // The NSWindow needs to be resizable, otherwise we'll end up with
@@ -928,6 +931,9 @@ void QCocoaWindow::windowDidEnterFullScreen()
     if (!isContentView())
         return;
 
+    if (isForeignWindow())
+        return;
+
     Q_ASSERT_X(m_view.window.qt_fullScreen, "QCocoaWindow",
         "FullScreen category processes window notifications first");
 
@@ -942,6 +948,9 @@ void QCocoaWindow::windowWillExitFullScreen()
     if (!isContentView())
         return;
 
+    if (isForeignWindow())
+        return;
+
     // The NSWindow needs to be resizable, otherwise we'll end up with
     // a weird zoom animation. The styleMask will be reset below.
     m_view.window.styleMask |= NSWindowStyleMaskResizable;
@@ -950,6 +959,9 @@ void QCocoaWindow::windowWillExitFullScreen()
 void QCocoaWindow::windowDidExitFullScreen()
 {
     if (!isContentView())
+        return;
+
+    if (isForeignWindow())
         return;
 
     Q_ASSERT_X(!m_view.window.qt_fullScreen, "QCocoaWindow",
