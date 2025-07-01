@@ -2023,27 +2023,29 @@ qreal QWindowsWindow::dpiRelativeScale(const UINT dpi) const
 
 void QWindowsWindow::handleDpiScaledSize(WPARAM wParam, LPARAM lParam, LRESULT *result)
 {
-    // We want to keep QWindow's device independent size constant across the
-    // DPI change. To accomplish this, scale QPlatformWindow's native size
-    // by the change of DPI (e.g. 120 -> 144 = 1.2), also taking any scale
-    // factor rounding into account. The win32 window size includes the margins;
-    // add the margins for the new DPI to the window size.
-    const UINT dpi = UINT(wParam);
-    const qreal scale = dpiRelativeScale(dpi);
-    const QMargins margins = fullFrameMargins();
+    // Rescale the client area by DPI, but keep the window frame dimensions as specified by the OS
+    // Naive linear scaling would introduces small errors when scaling the window frame.
+    int currentDpi = GetDpiForWindow(handle());
+    const UINT targetDpi = UINT(wParam);
+    int currentMargin_lr = GetSystemMetricsForDpi(SM_CXFRAME, currentDpi) * 2 + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, currentDpi) * 2;
+    int currentMargin_ud = GetSystemMetricsForDpi(SM_CYFRAME, currentDpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, currentDpi);
+    int targetMargin_lr = GetSystemMetricsForDpi(SM_CXFRAME, targetDpi) * 2 + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, targetDpi) * 2;
+    int targetMargin_ud = GetSystemMetricsForDpi(SM_CYFRAME, targetDpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, targetDpi);
+
     if (!(m_data.flags & Qt::FramelessWindowHint)) {
         // We need to update the custom margins to match the current DPI, because
         // we don't want our users manually hook into this message just to set a
         // new margin, but here we can't call setCustomMargins() directly, that
         // function will change the window geometry which conflicts with what we
         // are currently doing.
+        const qreal scale = QHighDpiScaling::roundScaleFactor(qreal(targetDpi) / QWindowsScreen::baseDpi) /
+                            QHighDpiScaling::roundScaleFactor(qreal(currentDpi) / QWindowsScreen::baseDpi);
         m_data.customMargins *= scale;
     }
 
-    const QSize windowSize = (geometry().size() * scale).grownBy((margins * scale) + customMargins());
-    SIZE *size = reinterpret_cast<SIZE *>(lParam);
-    size->cx = windowSize.width();
-    size->cy = windowSize.height();
+    SIZE *size = reinterpret_cast<SIZE*>(lParam);
+    size->cx = (size->cx - currentMargin_lr)* targetDpi / currentDpi + targetMargin_lr;
+    size->cy = (size->cy - currentMargin_ud) * targetDpi / currentDpi + targetMargin_ud;
     *result = true; // Inform Windows that we've set a size
 }
 
