@@ -2027,10 +2027,17 @@ void QWindowsWindow::handleDpiScaledSize(WPARAM wParam, LPARAM lParam, LRESULT *
     // Naive linear scaling would introduces small errors when scaling the window frame.
     int currentDpi = GetDpiForWindow(handle());
     const UINT targetDpi = UINT(wParam);
-    int currentMargin_lr = GetSystemMetricsForDpi(SM_CXFRAME, currentDpi) * 2 + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, currentDpi) * 2;
-    int currentMargin_ud = GetSystemMetricsForDpi(SM_CYFRAME, currentDpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, currentDpi);
-    int targetMargin_lr = GetSystemMetricsForDpi(SM_CXFRAME, targetDpi) * 2 + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, targetDpi) * 2;
-    int targetMargin_ud = GetSystemMetricsForDpi(SM_CYFRAME, targetDpi) + GetSystemMetricsForDpi(SM_CXPADDEDBORDER, targetDpi);
+    int currentMargin_lr = GetSystemMetricsForDpi(SM_CXFRAME, currentDpi) * 2;
+    int currentMargin_ud = GetSystemMetricsForDpi(SM_CYFRAME, currentDpi);
+    int targetMargin_lr = GetSystemMetricsForDpi(SM_CXFRAME, targetDpi) * 2;
+    int targetMargin_ud = GetSystemMetricsForDpi(SM_CYFRAME, targetDpi);
+
+    if (style() & WS_BORDER) {
+        currentMargin_lr += GetSystemMetricsForDpi(SM_CXPADDEDBORDER, currentDpi) * 2;
+        currentMargin_ud += GetSystemMetricsForDpi(SM_CXPADDEDBORDER, currentDpi);
+        targetMargin_lr += GetSystemMetricsForDpi(SM_CXPADDEDBORDER, targetDpi) * 2;
+        targetMargin_ud += GetSystemMetricsForDpi(SM_CXPADDEDBORDER, targetDpi);
+    }
 
     if (!(m_data.flags & Qt::FramelessWindowHint)) {
         // We need to update the custom margins to match the current DPI, because
