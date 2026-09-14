@@ -290,6 +290,18 @@ NSWindow<QNSWindowProtocol> *qnswindow_cast(NSWindow *window)
     return [super canBecomeMainWindow];
 }
 
+- (NSRect)constrainFrameRect:(NSRect)frameRect toScreen:(NSScreen *)screen
+{
+    // AppKit tries to keep windows visible on screen so when a window with a margin (eg SkirtedWindow),
+    // it will be pushed down, this is especially a problem with the notch which doesnt apparently expand visibleFrame here.
+    // Also AppKit apparently applies this rule to borderless NSPanels
+    // despite docs saying it only does that for "titled" windows.
+    // (https://developer.apple.com/documentation/appkit/nswindow/constrainframerect(_:to:)?language=objc)
+    if (m_platformWindow && m_platformWindow->window()->flags().testFlag(Qt::BypassWindowManagerHint))
+        return frameRect;
+    return [super constrainFrameRect:frameRect toScreen:screen];
+}
+
 - (BOOL)isOpaque
 {
     return m_platformWindow ? m_platformWindow->isOpaque() : [super isOpaque];
