@@ -19,6 +19,12 @@ extern "C"
 void _mm_pause(void);       // the compiler recognizes as intrinsic
 #endif
 
+#if defined(__aarch64__) || defined(__arm__)
+#  if __has_include(<arm_acle.h>)
+#    include <arm_acle.h>
+#  endif
+#endif
+
 QT_BEGIN_NAMESPACE
 
 #ifdef Q_CC_GNU
