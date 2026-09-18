@@ -127,7 +127,15 @@ bool QTlsBackendOpenSSL::ensureLibraryLoaded()
 
 QString QTlsBackendOpenSSL::backendName() const
 {
+#ifdef QT_TLS_OPENSSL_BACKEND_NAME
+    // A second copy of this plugin, built against a different major version of the
+    // OpenSSL headers, registers under its own name. Only one of the two copies can
+    // ever be isValid() in a given process; QTlsBackend::defaultBackendName() prefers
+    // "openssl" and falls through to this one when that copy is not usable.
+    return QStringLiteral(QT_STRINGIFY(QT_TLS_OPENSSL_BACKEND_NAME));
+#else
     return builtinBackendNames[nameIndexOpenSSL];
+#endif
 }
 
 bool QTlsBackendOpenSSL::isValid() const

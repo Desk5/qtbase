@@ -912,21 +912,27 @@ bool q_resolveOpenSslSymbols()
         RESOLVEFUNC(OpenSSL_version_num)
         RESOLVEFUNC(OpenSSL_version)
 
+        // A Qt installation may ship more than one copy of this plugin, each built
+        // against a different major version of the OpenSSL headers, so that it can
+        // use whichever OpenSSL the host system happens to provide. At most one of
+        // them can accept the runtime we just loaded; the others bow out here. That
+        // is an expected condition rather than an error, hence qCDebug: otherwise
+        // every process would print a scary warning on startup.
         if (!_q_OpenSSL_version || !_q_OpenSSL_version_num) {
-            // Apparently, we were built with OpenSSL 1.1 enabled but are now using
-            // a wrong library.
-            qCWarning(lcTlsBackend, "Incompatible version of OpenSSL");
+            qCDebug(lcTlsBackend, "Unusable version of OpenSSL, another backend will be used");
             return false;
         }
 
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
         if (q_OpenSSL_version_num() < 0x30000000) {
-            qCWarning(lcTlsBackend, "Incompatible version of OpenSSL (built with OpenSSL >= 3.x, runtime version is < 3.x)");
+            qCDebug(lcTlsBackend, "This backend was built against OpenSSL >= 3.x and cannot use the "
+                                  "runtime version < 3.x, another backend will be used");
             return false;
         }
 #else
         if (q_OpenSSL_version_num() >= 0x30000000) {
-            qCWarning(lcTlsBackend, "Incompatible version of OpenSSL (built with OpenSSL 1.x, runtime version is >= 3.x)");
+            qCDebug(lcTlsBackend, "This backend was built against OpenSSL 1.x and cannot use the "
+                                  "runtime version >= 3.x, another backend will be used");
             return false;
         }
 #endif // OPENSSL_VERSION_NUMBER
