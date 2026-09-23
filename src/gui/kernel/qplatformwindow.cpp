@@ -822,13 +822,11 @@ QSize QPlatformWindow::windowBaseSize() const
 QSize QPlatformWindow::windowSizeIncrement() const
 {
     QSize increment = window()->sizeIncrement();
-    if (!QHighDpiScaling::isActive())
+    // An unset increment is (-1, -1) or (0, 0). Pass it through unscaled: normalizing it to (1, 1)
+    // and scaling would make xcb advertise a spurious native increment (e.g. 2x2 at 200%), which some
+    // WMs honor by snapping the window size, fighting with the minimum size.
+    if (!QHighDpiScaling::isActive() || increment.isEmpty())
         return increment;
-
-    // Normalize the increment. If not set the increment can be
-    // (-1, -1) or (0, 0). Make that (1, 1) which is scalable.
-    if (increment.isEmpty())
-        increment = QSize(1, 1);
 
     return QHighDpi::toNativePixels(increment, window());
 }
