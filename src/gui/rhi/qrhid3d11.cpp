@@ -5251,6 +5251,7 @@ bool QD3D11SwapChain::createOrResize()
         swapChainFlags |= DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
     }
 
+    bool frameLatencyWaitPending = false;
     if (!swapChain) {
         sampleDesc = rhiD->effectiveSampleDesc(m_sampleCount);
         colorFormat = DEFAULT_FORMAT;
@@ -5399,6 +5400,10 @@ bool QD3D11SwapChain::createOrResize()
             return false;
         }
     } else {
+        // A wait done in beginFrame() that was not followed by a Present()
+        // (SkipPresent) is still pending after ResizeBuffers(). Waiting again
+        // in the next beginFrame() would block for the full 1 sec timeout.
+        frameLatencyWaitPending = lastFrameLatencyWaitSlot == currentFrameSlot;
         releaseBuffers();
         // flip model -> buffer count is the real buffer count, not 1 like with the legacy modes
         hr = swapChain->ResizeBuffers(UINT(BUFFER_COUNT), UINT(pixelSize.width()), UINT(pixelSize.height()),
@@ -5483,7 +5488,8 @@ bool QD3D11SwapChain::createOrResize()
     }
 
     currentFrameSlot = 0;
-    lastFrameLatencyWaitSlot = -1; // wait already in the first frame, as instructed in the dxgi docs
+    // wait already in the first frame, as instructed in the dxgi docs
+    lastFrameLatencyWaitSlot = frameLatencyWaitPending ? currentFrameSlot : -1;
     frameCount = 0;
     ds = m_depthStencil ? QRHI_RES(QD3D11RenderBuffer, m_depthStencil) : nullptr;
 
